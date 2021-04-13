@@ -6,9 +6,9 @@
 
 Exercício para praticar uma pipeline de Streaming de Dados com Kafka. Vamos implementar a seguinte arquitetura:
 
-Integração do Kafka com uma database (postgresql) usando *kafka connect*, processamento de dados em streaming com **ksqlDB* e entrega em data lake com *kafka connect*.
+Integração do Kafka com uma database (postgresql) usando *kafka connect*, processamento de dados em streaming com *ksqlDB* e entrega em data lake com *kafka connect*.
 
-**Colar desenho da arquitetura aqui!**
+![Arquitetura da Confluent](https://docs.confluent.io/platform/current/_images/example_6.jpg)
 
 ---
 
@@ -198,3 +198,4 @@ A consulta retorna a seguinte tabela:
 
 Bem mais interessante!
 
+## 9 - Criando uma tabela com processamento em tempo real
