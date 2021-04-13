@@ -9,6 +9,7 @@ Exercício para praticar uma pipeline de Streaming de Dados com Kafka. Vamos imp
 Integração do Kafka com uma database (postgresql) usando *kafka connect*, processamento de dados em streaming com *ksqlDB* e entrega em data lake com *kafka connect*.
 
 ![Arquitetura da Confluent](https://docs.confluent.io/platform/current/_images/example_6.jpg)
+Fonte: Documentação Confluent (https://docs.confluent.io/platform/current/tutorials/examples/connect-streams-pipeline/docs/index.html#example-1-kafka-console-producer-key-string-and-value-string)
 
 ---
 
