@@ -3,6 +3,7 @@ import pandas as pd
 from sqlalchemy import create_engine
 from faker import Faker
 import time
+from datetime import datetime
 
 # função para parsear a saída do parâmetro SILENT
 def str2bool(v):
@@ -23,9 +24,9 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='Generate fake data...')
 
-    parser.add_argument('--interval', type=int, default=5,
+    parser.add_argument('--interval', type=int, default=0.5,
                         help='interval of generating fake data in seconds')
-    parser.add_argument('-n', type=int, default=10,
+    parser.add_argument('-n', type=int, default=1,
                         help='sample size')
     parser.add_argument('--connection-string', '-cs', dest="connection_string", 
                         type=str, default='postgresql://postgres:Ney1987@localhost:5432/postgres',
@@ -56,6 +57,7 @@ if __name__ == "__main__":
         foto       = [faker.image_url() for i in range(args.n)]
         nascimento = [faker.date_of_birth() for i in range(args.n)]
         profissao  = [faker.job() for i in range(args.n)]
+        dt_update  = [datetime.now() for i in range(args.n)]
 
         df = pd.DataFrame({
             "nome": nome,
@@ -64,7 +66,8 @@ if __name__ == "__main__":
             "email": email,
             "foto": foto,
             "nascimento": nascimento,
-            "profissao": profissao
+            "profissao": profissao,
+            "dt_update": dt_update
         })
 
         df.to_sql("customers", con=engine, if_exists="append", index=False)
