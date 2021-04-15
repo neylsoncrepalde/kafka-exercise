@@ -182,7 +182,7 @@ O output dessa consulta não é dos melhores. Além de conter um número grande 
 
 ```
 ksql> select nome, telefone, email, 
->TIMESTAMPTOSTRING(nascimento, 'yyyy-MM-dd', 'UTC') as dt_nascimento,
+>DATETOSTRING(nascimento, 'yyyy-MM-dd') as dt_nascimento,
 >TIMESTAMPTOSTRING(dt_update, 'yyyy-MM-dd HH:mm:ss.SSS', 'UTC') as dt_updt_conv
 >from custstream emit changes;
 ```
@@ -200,3 +200,62 @@ A consulta retorna a seguinte tabela:
 Bem mais interessante!
 
 ## 9 - Criando uma tabela com processamento em tempo real
+
+Vamos criar um stream que filtra apenas as pessoas adultas (aqui definido como quem nasceu depois de 2003-01-01) e armazena esses dados no tópico `adultos`. O tópico será criado ao criar o stream.
+
+```
+ksql> create stream jovens WITH (kafka_topic='jovens', value_format='AVRO') AS
+>select nome, telefone, email, profissao,
+>DATETOSTRING(nascimento, 'yyyy-MM-dd') as dt_nascimento,
+>TIMESTAMPTOSTRING(dt_update, 'yyyy-MM-dd HH:mm:ss.SSS', 'UTC') as dt_updt
+>from custstream
+>WHERE DATETOSTRING(nascimento, 'yyyy-MM-dd') >= '2000-01-01'
+>emit changes;
+```
+
+Se checarmos novamente as streams,
+
+```
+ksql> show streams;
+```
+
+    Stream Name         | Kafka Topic                 | Key Format | Value Format | Windowed 
+    ------------------------------------------------------------------------------------------
+    JOVENS              | jovens                      | KAFKA      | AVRO         | false    
+    CUSTSTREAM          | psg-customers               | KAFKA      | AVRO         | false    
+    KSQL_PROCESSING_LOG | default_ksql_processing_log | KAFKA      | JSON         | false    
+    ------------------------------------------------------------------------------------------
+
+Agora, vamos criar um stream que fará a classificação das pessoas entre jovens e adultos e uma tabela que fará a contagem de jovens e adultos a cada 30 segundos.
+
+```
+ksql> create stream idadeclass WITH (kafka_topic='idadeclass', value_format='AVRO') AS
+>select nome, telefone, email, profissao,
+>CASE
+>WHEN DATETOSTRING(nascimento, 'yyyy-MM-dd') >= '2000-01-01' THEN 'JOVEM'
+>ELSE 'ADULTO' END AS idadecat,
+>TIMESTAMPTOSTRING(dt_update, 'yyyy-MM-dd HH:mm:ss.SSS', 'UTC') as dt_updt
+>from custstream
+>emit changes;
+```
+
+E depois
+
+```
+ksql> create table idadecont WITH (kafka_topic='idadecont', value_format='AVRO') AS
+>select idadecat, count(idadecat) as contagem
+>from idadeclass
+>window tumbling (size 30 seconds)
+>group by idadecat
+>emit changes;
+```
+
+E teremos uma tabela contando cada caso de JOVEM e ADULTO para cada intervalo de 30 segundos.
+
+## 10 - Ingestão de tópicos no S3
+
+Vamos agora configurar outro tipo de connector, um *sink connector* para entregar dados armazenados em tópicos no S3. Para isso faremos:
+
+```
+
+```

@@ -124,3 +124,4 @@ venv.bak/
 .dmypy.json
 dmypy.json
 
+.env_kafka_connect

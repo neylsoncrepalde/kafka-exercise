@@ -1,0 +1,37 @@
+{
+  "name" : "kafka-connect-s3",
+  "version" : "10.0.0",
+  "title" : "Kafka Connect S3",
+  "description" : "The S3 connector, currently available as a sink, allows you to export data from Kafka topics to S3 objects in either Avro or JSON formats. In addition, for certain data layouts, S3 connector exports data by guaranteeing exactly-once delivery semantics to consumers of the S3 objects it produces.\n\nBeing a sink, the S3 connector periodically polls data from Kafka and in turn uploads it to S3. A partitioner is used to split the data of every Kafka partition into chunks. Each chunk of data is represented as an S3 object, whose key name encodes the topic, the Kafka partition and the start offset of this data chunk. If no partitioner is specified in the configuration, the default partitioner which preserves Kafka partitioning is used. The size of each data chunk is determined by the number of records written to S3 and by schema compatibility.",
+  "owner" : {
+    "username" : "confluentinc",
+    "type" : "organization",
+    "name" : "Confluent, Inc.",
+    "url" : "https://confluent.io/",
+    "logo" : "assets/confluent.png"
+  },
+  "support" : {
+    "summary" : "Confluent supports the S3 sink connector alongside community members as part of its Confluent Platform offering.",
+    "url" : "https://docs.confluent.io/current/",
+    "logo" : "assets/confluent.png",
+    "provider_name" : "Confluent, Inc."
+  },
+  "tags" : [ "s3", "aws" ],
+  "requirements" : [ "AWS S3 bucket with write permissions" ],
+  "features" : {
+    "supported_encodings" : [ "any" ],
+    "single_message_transforms" : true,
+    "confluent_control_center_integration" : true,
+    "kafka_connect_api" : true
+  },
+  "logo" : "assets/s3.jpg",
+  "documentation_url" : "https://docs.confluent.io/kafka-connect-s3-sink/current/index.html",
+  "source_url" : "https://github.com/confluentinc/kafka-connect-storage-cloud",
+  "docker_image" : { },
+  "license" : [ {
+    "name" : "Confluent Community License",
+    "url" : "http://www.confluent.io/confluent-community-license"
+  } ],
+  "component_types" : [ "sink" ],
+  "release_date" : "2021-03-03"
+}
