@@ -35,7 +35,7 @@ services:
       - proxy-net
 
   db:
-    env_file: docker/.env
+    env_file: docker/.env_superset
     image: postgres:10
     container_name: superset_db
     restart: unless-stopped
