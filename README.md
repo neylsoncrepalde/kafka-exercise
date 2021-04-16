@@ -22,7 +22,7 @@ Integração do Kafka com uma database (postgresql) usando *kafka connect*, proc
 
 ## 2 - Configurar o arquivo .env_kafka_connect
 
-Você deve criar um arquivo `.env_kafka_coonect` para cadastrar as chaves de sua conta aws como variáveis de ambiente que serão injetadas dentro do container do kafka connect. O arquivo deve ser conforme o modelo:
+Você deve criar um arquivo `.env_kafka_connect` para cadastrar as chaves de sua conta aws como variáveis de ambiente que serão injetadas dentro do container do kafka connect. O arquivo deve ser conforme o modelo:
 
 ```
 AWS_ACCESS_KEY_ID=xxxxxxxxxxxxxxxxxxx
