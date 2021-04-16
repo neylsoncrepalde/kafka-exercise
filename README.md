@@ -2,43 +2,61 @@
 
 ### Prof. Neylson Crepalde
 
-#### Março de 2021
+#### Abril de 2021
 
 Exercício para praticar uma pipeline de Streaming de Dados com Kafka. Vamos implementar a seguinte arquitetura:
 
-Integração do Kafka com uma database (postgresql) usando *kafka connect*, processamento de dados em streaming com *ksqlDB* e entrega em data lake com *kafka connect*.
+Integração do Kafka com uma database (postgresql) usando *kafka connect*, processamento de dados em streaming com *ksqlDB* e entrega em data lake com *kafka connect*. Para consultas simples, vamos utilizar o Superset (embora você possa escolher o cliente SQL de sua preferência). Todos os serviços que compõem o kafka, o superset e a database PostgreSQL que servirá de fonte serão implantadas com `docker-compose`.
 
 ![Arquitetura](img/kafka_exercise_arch.png)
 
 ---
 
-# Passo a passo para replicação (execução local)
+# Passo a passo para execução
 
-## 1 - Configurar a Confluent Platform para executar localmente
+## 1 - Pré-requisitos
 
-...
+- Docker
+- docker-compose
+- Uma conta AWS free tier
 
-## 2 - Instalar o cliente da confluent-hub
+## 2 - Configurar o arquivo .env_kafka_connect
 
-...
+Você deve criar um arquivo `.env_kafka_coonect` para cadastrar as chaves de sua conta aws como variáveis de ambiente que serão injetadas dentro do container do kafka connect. O arquivo deve ser conforme o modelo:
 
-## 3 - Configurar variáveis de ambiente
-
-É necessário definir a variável que contém o *path* para o home do Kafka.
-
-```bash
-export CONFLUENT_HOME=/home/<seu-usuario>/confluent-6.1.1
+```
+AWS_ACCESS_KEY_ID=xxxxxxxxxxxxxxxxxxx
+AWS_SECRET_ACCESS_KEY=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ```
 
-## 4 - Iniciar o docker container com o PostgreSQL
+## 3 - Subir a plataforma Confluent no docker-compose + PostgreSQL
+
+No arquivo `docker-compose.yml` estamos subindo toda a estrutura da plataforma Confluent junto com a database PostgreSQL que servirá de fonte. Para isso, vamos clonar o projeto, entrar na pasta e subir a estrutura.
 
 ```bash
-docker run --name test-postgres -e POSTGRES_PASSWORD=<sua-senha> -p 5432:5432 --rm -d postgres:13.2
+git clone https://github.com/neylsoncrepalde/kafka-exercise.git
+cd kafka-exercise
+docker-compose up -d
 ```
+
+Este código yml também cria uma rede externa na qual o superset será implantado para que todos os serviços consigam "se enxergar".
+
+## 4 - Subir o superset
+
+Em seguida vamos subir os serviços do superset. O arquivo `docker-compose-non-dev.yml` na pasta superset já disponibiliza os serviços da ferramenta na rede externa criada pelo outro arquivo.
+
+```bash
+cd superset
+docker-compose -f docker-compose-non-dev.yml up -d
+ ```
+
 
 ## 5 - Executar o gerador de dados *fake*
 
+Em seguida, retorne à pasta root do projeto e execute o gerador de dados fake.
+
 ```bash
+cd ..
 python make_fake_data.py
 ```
 
@@ -67,7 +85,7 @@ Será necessário executar o simulador apenas uma vez para criar a tabela na dat
 Vamos criar um tópico no kafka que irá armazenar os dados movidos da fonte.
 
 ```bash
-kafka-topics --create \
+docker-compose exec broker kafka-topics --create \
     --bootstrap-server localhost:9092 \
     --partitions 1 \
     --replication-factor 1 \
@@ -78,7 +96,7 @@ O sufixo do nome do tópico deve possuir o mesmo nome da tabela cadastrado no ar
 
 ## 7 - Registrar os parâmetros de configuração do connector no kafka
 
-Para isso, vamos precisar de um arquivo `json` contendo as configurações do conector que vamos registrar. O arquivo `connect_postgres.config` possui um exemplo de implementação. O conteúdo do arquivo está transcrito abaixo:
+Para isso, vamos precisar de um arquivo no formato `json` contendo as configurações do conector que vamos registrar. O arquivo `connect_postgres.config` possui um exemplo de implementação. O conteúdo do arquivo está transcrito abaixo:
 
 ```json
 {
@@ -86,7 +104,7 @@ Para isso, vamos precisar de um arquivo `json` contendo as configurações do co
     "config": {
         "connector.class": "io.confluent.connect.jdbc.JdbcSourceConnector",
         "tasks.max": 1,    
-        "connection.url": "jdbc:postgresql://127.0.0.1:5432/postgres",
+        "connection.url": "jdbc:postgresql://postgres:5432/postgres",
         "connection.user": "postgres",
         "connection.password": "SUA-SENHA",
         "mode": "timestamp",
@@ -106,20 +124,20 @@ curl -X POST -H "Content-Type: application/json" \
     --data @connect_postgres.config http://localhost:8083/connectors
 ```
 
-Este comando cria um conector que irá puxar todo o conteúdo da tabela mais todos os novos dados que forem inseridos. **Atenção**: O Kafka connect não puxa, por default, alterações feitas em registros já existentes. Puxa apenas novos registros. Para verificar se nossa configuração foi criada corretamente e o conector está ok, vamos exibir os logs. Utilizando a CLI da Confluent, faça
+Este comando cria um conector que irá puxar todo o conteúdo da tabela mais todos os novos dados que forem inseridos. **Atenção**: O Kafka connect não puxa, por default, alterações feitas em registros já existentes. Puxa apenas novos registros. Para verificar se nossa configuração foi criada corretamente e o conector está ok, vamos exibir os logs.
 
 ```bash
-confluent local services connect log
+docker logs -f connect
 ```
 
 e verifique se não há nenhuma mensagem de erro. 
 
 ## 8 - Iniciar um stream no ksqlDB
 
-Para iniciar o ksqlDB apontando os logs da aplicação para uma pasta melhor localizada, fazemos
+Para iniciar o ksqlDB, fazemos
 
 ```bash
-LOG_DIR=$CONFLUENT_HOME/ksql_logs ksql
+docker-compose exec ksqldb-cli ksql http://ksqldb-server:8088
 ```
 
 Antes de começar, vamos conferir se nosso tópico foi criado corretamente. Na *CLI* do ksqlDB, faça
@@ -177,7 +195,7 @@ Para fazer uma consulta rápida ao stream (apenas exibí-lo na tela), podemos fa
 ksql> select * from custstream emit changes;
 ```
 
-O output dessa consulta não é dos melhores. Além de conter um número grande de colunas, dificultando a visualização, todas as colunas de data estão no formato BIGINT o que não é nada intuitivo para interpretação. Podemos fazer uma consulta mais enxuta e já corrigindo essas datas com o seguinte código:
+O output dessa consulta não é dos melhores. Além de conter um número grande de colunas, dificultando a visualização, todas as colunas de data estão nos formatos INT ou BIGINT o que não é nada intuitivo para interpretação. Podemos fazer uma consulta mais enxuta e já corrigindo essas datas com o seguinte código:
 
 ```
 ksql> select nome, telefone, email, 
@@ -200,7 +218,7 @@ Bem mais interessante!
 
 ## 9 - Criando uma tabela com processamento em tempo real
 
-Vamos criar um stream que filtra apenas as pessoas adultas (aqui definido como quem nasceu depois de 2003-01-01) e armazena esses dados no tópico `adultos`. O tópico será criado ao criar o stream.
+Primeiro, vamos criar um stream que filtra apenas as pessoas "jovens" (aqui definido como quem nasceu depois de 2000-01-01) e armazena esses dados no tópico `jovens`. O tópico será criado ao criar o stream.
 
 ```
 ksql> create stream jovens WITH (kafka_topic='jovens', value_format='AVRO') AS
@@ -253,8 +271,73 @@ E teremos uma tabela contando cada caso de JOVEM e ADULTO para cada intervalo de
 
 ## 10 - Ingestão de tópicos no S3
 
-Vamos agora configurar outro tipo de connector, um *sink connector* para entregar dados armazenados em tópicos no S3. Para isso faremos:
+Vamos agora configurar outro tipo de connector, um *sink connector* para entregar dados armazenados no tópico `jovens` no S3. Para isso, precisamos de um arquivo de configuração do conector similar ao que elaboramos antes, mas agora com outros parâmetros. Vamos nomeá-lo `connect_s3_sink_jovens.config`:
 
+```json
+{
+    "name": "s3-jovens-sink",
+    "config": {
+        "connector.class": "io.confluent.connect.s3.S3SinkConnector",
+        "format.class": "io.confluent.connect.s3.format.parquet.ParquetFormat",
+        "flush.size": 10,
+        "schema.compatibility": "FULL",
+        "s3.bucket.name": "NOME_DO_BUCKET",
+        "s3.region": "REGIÃO_AWS",
+        "s3.object.tagging": true,
+        "s3.ssea.name": "AES256",
+        "topics.dir": "raw-data/kafka",
+        "storage.class": "io.confluent.connect.s3.storage.S3Storage",
+        "tasks.max": 1,
+        "topics": "jovens"
+    }
+}
 ```
 
+E vamos cadastrá-lo no cluster connect:
+
+```bash
+curl -X POST -H "Content-Type: application/json" \
+    --data @connect_s3_sink_jovens.config http://localhost:8083/connectors
 ```
+
+Vamos criar também uma configuração de conector para entregar dados do tópico `idadecount` para o S3 Vamos chamá-la de `connect_s3_sink_count.config`.
+
+```json
+{
+    "name": "s3-contagem-sink",
+    "config": {
+        "connector.class": "io.confluent.connect.s3.S3SinkConnector",
+        "format.class": "io.confluent.connect.s3.format.json.JsonFormat",
+        "keys.format.class": "io.confluent.connect.s3.format.json.JsonFormat",
+        "schema.generator.class": "io.confluent.connect.storage.hive.schema.DefaultSchemaGenerator",
+        "flush.size": 10,
+        "schema.compatibility": "NONE",
+        "s3.bucket.name": "NOME_DO_BUCKET",
+        "s3.region": "REGIÃO_AWS",
+        "s3.object.tagging": true,
+        "s3.ssea.name": "AES256",
+        "topics.dir": "raw-data/kafka",
+        "storage.class": "io.confluent.connect.s3.storage.S3Storage",
+        "tasks.max": 1,
+        "topics": "idadecont",
+        "store.kafka.keys": true
+    }
+}
+```
+
+E então, cadastrá-lo no cluster connect:
+
+```bash
+curl -X POST -H "Content-Type: application/json" \
+    --data @connect_s3_sink_count.config http://localhost:8083/connectors
+```
+
+PRONTO!! Agora os dados dos tópicos estão sendo entregues no bucket S3 definido. Vamos verificar no ksql se está tudo OK com os conectores:
+
+```
+kqsl> show connectors;
+```
+
+---
+
+**Parabéns**!! Você acabou de concluir o seu pipeline de processamento de dados em tempo real usando a plataforma Confluent no docker-compose!
