@@ -53,7 +53,7 @@ services:
       - proxynet
 
   connect:
-    image: cnfldemos/kafka-connect-datagen:0.4.0-6.1.0
+    image: connect-custom:1.0.0
     hostname: connect
     container_name: connect
     depends_on:
@@ -79,9 +79,6 @@ services:
       CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: http://schema-registry:8081
       CONNECT_PLUGIN_PATH: "/usr/share/java,/usr/share/confluent-hub-components"
       CONNECT_LOG4J_LOGGERS: org.apache.zookeeper=ERROR,org.I0Itec.zkclient=ERROR,org.reflections=ERROR
-    volumes:
-      - ./jdbc-connector/confluentinc-kafka-connect-jdbc-10.1.1/:/usr/share/confluent-hub-components/confluentinc-kafka-jdbc-connector/
-      - ./s3-connector/confluentinc-kafka-connect-s3-10.0.0/:/usr/share/confluent-hub-components/confluentinc-kafka-s3-sink-connector/
     networks:
       - proxynet
 
