@@ -1,6 +1,6 @@
 # Kafka Exercise
 
-### Prof. Neylson Crepalde
+### Neylson Crepalde e Mariana Medeiros
 
 #### Abril de 2021
 
