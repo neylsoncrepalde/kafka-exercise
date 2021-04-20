@@ -35,9 +35,9 @@ Após clonar o repositório, mude para a pasta `custom-kafka-connectors-image`, 
 ```bash
 git clone https://github.com/neylsoncrepalde/kafka-exercise.git
 cd kafka-exercise/custom-kafka-connectors-image
-docker build . -t connector-custom:1.0.0
+docker build . -t connect-custom:1.0.0
 ```
-Uma nova imagem com o nome `connector-custom` e tag ` 1.0.0` será criada. Essa é a imagem que nosso serviço `connect` dentro do `docker-compose.yml` irá utilizar, com os conectores que precisaremos instalados.
+Uma nova imagem com o nome `connect-custom` e tag ` 1.0.0` será criada. Essa é a imagem que nosso serviço `connect` dentro do `docker-compose.yml` irá utilizar, com os conectores que precisaremos instalados.
 
 ## 4 - Subir a plataforma Confluent no docker-compose + PostgreSQL
 
