@@ -29,7 +29,14 @@ AWS_ACCESS_KEY_ID=xxxxxxxxxxxxxxxxxxx
 AWS_SECRET_ACCESS_KEY=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ```
 
-## 3 - Subir a plataforma Confluent no docker-compose + PostgreSQL
+## 3 - Buildar a imagem do kafka-connect
+Dentro da pasta `custom-kafka-connectors-image`, execute o seguinte comando:
+```bash
+docker build . -t connector-custom:1.0.0
+```
+Uma nova imagem com o nome `connector-custom` e tag ` 1.0.0` será criada. Essa é a imagem que nosso serviço `connect` dentro do `docker-compose.yml` irá utilizar, com os conectores que precisaremos instalados.
+
+## 4 - Subir a plataforma Confluent no docker-compose + PostgreSQL
 
 No arquivo `docker-compose.yml` estamos subindo toda a estrutura da plataforma Confluent junto com a database PostgreSQL que servirá de fonte. Para isso, vamos clonar o projeto, entrar na pasta e subir a estrutura.
 
@@ -41,7 +48,7 @@ docker-compose up -d
 
 Este código yml também cria uma rede externa na qual o superset será implantado para que todos os serviços consigam "se enxergar".
 
-## 4 - Subir o superset
+## 5 - Subir o superset
 
 Em seguida vamos subir os serviços do superset. O arquivo `docker-compose-non-dev.yml` na pasta superset já disponibiliza os serviços da ferramenta na rede externa criada pelo outro arquivo.
 
@@ -51,7 +58,7 @@ docker-compose -f docker-compose-non-dev.yml up -d
  ```
 
 
-## 5 - Executar o gerador de dados *fake*
+## 6 - Executar o gerador de dados *fake*
 
 Em seguida, retorne à pasta root do projeto e execute o gerador de dados fake.
 
@@ -80,7 +87,7 @@ Abaixo, a documentação do comando
 
 Será necessário executar o simulador apenas uma vez para criar a tabela na database.
 
-## 6 - Criar um tópico no Kafka
+## 7 - Criar um tópico no Kafka
 
 Vamos criar um tópico no kafka que irá armazenar os dados movidos da fonte.
 
@@ -94,7 +101,7 @@ docker-compose exec broker kafka-topics --create \
 
 O sufixo do nome do tópico deve possuir o mesmo nome da tabela cadastrado no arquivo `make_fake_data.py` caso seja necessário customizar.
 
-## 7 - Registrar os parâmetros de configuração do connector no kafka
+## 8 - Registrar os parâmetros de configuração do connector no kafka
 
 Para isso, vamos precisar de um arquivo no formato `json` contendo as configurações do conector que vamos registrar. O arquivo `connect_postgres.config` possui um exemplo de implementação. O conteúdo do arquivo está transcrito abaixo:
 
@@ -132,7 +139,7 @@ docker logs -f connect
 
 e verifique se não há nenhuma mensagem de erro. 
 
-## 8 - Iniciar um stream no ksqlDB
+## 9 - Iniciar um stream no ksqlDB
 
 Para iniciar o ksqlDB, fazemos
 
@@ -216,7 +223,7 @@ A consulta retorna a seguinte tabela:
 
 Bem mais interessante!
 
-## 9 - Criando uma tabela com processamento em tempo real
+## 10 - Criando uma tabela com processamento em tempo real
 
 Primeiro, vamos criar um stream que filtra apenas as pessoas "jovens" (aqui definido como quem nasceu depois de 2000-01-01) e armazena esses dados no tópico `jovens`. O tópico será criado ao criar o stream.
 
@@ -269,7 +276,7 @@ ksql> create table idadecont WITH (kafka_topic='idadecont', value_format='AVRO')
 
 E teremos uma tabela contando cada caso de JOVEM e ADULTO para cada intervalo de 30 segundos.
 
-## 10 - Ingestão de tópicos no S3
+## 11 - Ingestão de tópicos no S3
 
 Vamos agora configurar outro tipo de connector, um *sink connector* para entregar dados armazenados no tópico `jovens` no S3. Para isso, precisamos de um arquivo de configuração do conector similar ao que elaboramos antes, mas agora com outros parâmetros. Vamos nomeá-lo `connect_s3_sink_jovens.config`:
 
