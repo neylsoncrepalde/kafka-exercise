@@ -231,7 +231,7 @@ Primeiro, vamos criar um stream que filtra apenas as pessoas "jovens" (aqui defi
 
 ```
 ksql> create stream jovens WITH (kafka_topic='jovens', value_format='AVRO') AS
->select nome, telefone, email, profissao,
+>select nome, sexo, telefone, email, profissao,
 >DATETOSTRING(nascimento, 'yyyy-MM-dd') as dt_nascimento,
 >TIMESTAMPTOSTRING(dt_update, 'yyyy-MM-dd HH:mm:ss.SSS', 'UTC') as dt_updt
 >from custstream

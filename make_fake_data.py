@@ -1,5 +1,6 @@
 import argparse
 import pandas as pd
+import numpy as np
 from sqlalchemy import create_engine
 from faker import Faker
 import time
@@ -51,6 +52,7 @@ if __name__ == "__main__":
     # Gera dados fake a faz ingestáo
     while True:
         nome       = [faker.name() for i in range(args.n)]
+        gender     = [np.random.choice(["M", "F"], p=[0.5, 0.5]) for i in range(args.n)]
         endereco   = [faker.address() for i in range(args.n)]
         telefone   = [faker.phone_number() for i in range(args.n)]
         email      = [faker.safe_email() for i in range(args.n)]
@@ -61,6 +63,7 @@ if __name__ == "__main__":
 
         df = pd.DataFrame({
             "nome": nome,
+            "sexo": gender,
             "endereco": endereco,
             "telefone": telefone,
             "email": email,
